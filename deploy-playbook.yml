@@ -41,16 +41,28 @@
             dest: /usr/local/lib/docker/cli-plugins/docker-compose
             mode: '0755'
 
-    - name: Pull latest images
-      command: docker compose pull
-      args:
-        chdir: /home/ubuntu/app
-
     - name: Stop existing stack (if any)
       command: docker compose down
       args:
         chdir: /home/ubuntu/app
       ignore_errors: true
+
+    - name: Remove any leftover containers
+      shell: docker rm -f $(docker ps -aq) || true
+      ignore_errors: true
+
+    - name: Prune unused Docker networks
+      command: docker network prune -f
+
+    - name: Restart Docker service
+      service:
+        name: docker
+        state: restarted
+
+    - name: Pull latest images
+      command: docker compose pull
+      args:
+        chdir: /home/ubuntu/app
 
     - name: Start stack with docker compose
       command: docker compose up -d
