@@ -20,11 +20,26 @@
         src: init.sql
         dest: /home/ubuntu/app/init.sql
 
-    - name: Install Docker Compose plugin
-      apt:
-        name: docker-compose-plugin
-        state: present
-        update_cache: true
+    - name: Check if docker compose plugin is installed
+      command: docker compose version
+      register: compose_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install Docker Compose plugin manually
+      when: compose_check.rc != 0
+      block:
+        - name: Create docker cli-plugins directory
+          file:
+            path: /usr/local/lib/docker/cli-plugins
+            state: directory
+            mode: '0755'
+
+        - name: Download docker-compose binary
+          get_url:
+            url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+            dest: /usr/local/lib/docker/cli-plugins/docker-compose
+            mode: '0755'
 
     - name: Pull latest images
       command: docker compose pull
