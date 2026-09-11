@@ -1,0 +1,38 @@
+---
+- name: Deploy Flask MySQL app container
+  hosts: all
+  become: true
+  vars:
+    image_name: "{{ image_name }}"
+    image_tag: "{{ image_tag }}"
+    container_name: flask-mysql-app
+    container_port: "8080:5000"
+
+  tasks:
+    - name: Pull the Docker image
+      community.docker.docker_image:
+        name: "{{ image_name }}:{{ image_tag }}"
+        source: pull
+
+    - name: Stop and remove existing container (if present)
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+
+    - name: Run the new container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ container_port }}"
+
+    - name: Verify container is running
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+
+    - name: Show container status
+      debug:
+        msg: "{{ container_name }} is running: {{ container_info.container.State.Running }}"
