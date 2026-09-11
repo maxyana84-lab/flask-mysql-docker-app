@@ -1,25 +1,32 @@
-# Flask & MySQL Hit-Counter Application
+# Flask MySQL Docker App
 
-A simple and robust web application built with Python (Flask) and MySQL database, fully containerized using Docker and Docker Compose. The application uses a custom bridge network for secure container communication and automatically increments a page view counter on every visit.
-
-## Features
-
-- **Flask Backend:** Serves the web interface and communicates with the database.
-- **MySQL Database:** Safely stores the page view count.
-- **Dockerized Environment:** Both services run in isolated containers.
-- **Custom Network:** Services communicate securely using a dedicated Docker bridge network.
+A simple Flask web application with a page view counter stored in a MySQL database. The application is packaged in Docker containers and automatically deployed to an AWS EC2 server through a GitHub Actions CI/CD pipeline.
 
 ## Project Structure
 
-- `main.py` - Flask web application with automatic DB connection retry logic.
-- `docker-compose.yml` - Multi-container Docker orchestration file.
-- `Dockerfile` - Blueprint for the Flask service image.
-- `init.sql` - Database initialization script.
+- main.py — Flask application code
+- docker-compose.yml — defines the web (Flask) and db (MySQL) services
+- Dockerfile — builds the application image
+- init.sql — initializes the counter table in the database
+- deploy-playbook.yml — Ansible playbook for server deployment
+- inventory.ini — server address used by Ansible
 
-## How to Run
+## How It Works
 
-1. Make sure you have **Docker** and **Docker Compose** installed.
-2. Clone this repository and navigate to the project folder.
-3. Start the application by running:
-   ```bash
-   docker compose up --build
+On every push to the main branch, a GitHub Actions workflow runs automatically that:
+
+1. Builds the Docker image of the application and pushes it to DockerHub
+2. Connects to the AWS EC2 server via SSH
+3. Runs an Ansible playbook that copies the configuration files to the server and starts the containers with docker compose
+
+This means a manual "docker compose up --build" run is not required in production — the application image is already built and published on DockerHub, and the server pulls the ready-made image and runs it alongside the database.
+
+## Running Locally
+
+To run the project locally for development, you can use: docker compose up --build
+
+This will build the application image from source locally instead of using the image from DockerHub.
+
+## Accessing the App
+
+After a successful deployment, the application is available at the server's address on port 8080.
