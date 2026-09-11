@@ -26,3 +26,17 @@ jobs:
           context: .
           push: true
           tags: maxyana/flask-mysql-docker-app:latest
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      - name: Deploy with Ansible
+        run: |
+          ansible-playbook -i inventory.ini deploy-playbook.yml \
+            --extra-vars "image_name=maxyana/flask-mysql-docker-app image_tag=latest" \
+            --ssh-common-args='-o StrictHostKeyChecking=no'
