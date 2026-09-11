@@ -1,8 +1,8 @@
-name: Flask CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build-and-push:
@@ -27,10 +27,12 @@ jobs:
           push: true
           tags: maxyana/flask-mysql-docker-app:latest
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 44.210.123.249 >> ~/.ssh/known_hosts
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
@@ -39,4 +41,5 @@ jobs:
         run: |
           ansible-playbook -i inventory.ini deploy-playbook.yml \
             --extra-vars "image_name=maxyana/flask-mysql-docker-app image_tag=latest" \
+            --private-key ~/.ssh/deploy_key \
             --ssh-common-args='-o StrictHostKeyChecking=no'
