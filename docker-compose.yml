@@ -2,10 +2,10 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    image: maxyana/flask-mysql-docker-app:latest
     restart: always
     ports:
-      - "5001:5000"
+      - "8080:5000"
     environment:
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
