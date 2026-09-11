@@ -1,38 +1,43 @@
 ---
-- name: Deploy Flask MySQL app container
+- name: Deploy Flask MySQL app with docker-compose
   hosts: all
   become: true
-  vars:
-    image_name: "{{ image_name }}"
-    image_tag: "{{ image_tag }}"
-    container_name: flask-mysql-app
-    container_port: "8080:5000"
 
   tasks:
-    - name: Pull the Docker image
-      community.docker.docker_image:
-        name: "{{ image_name }}:{{ image_tag }}"
-        source: pull
+    - name: Ensure app directory exists
+      file:
+        path: /home/ubuntu/app
+        state: directory
+        mode: '0755'
 
-    - name: Stop and remove existing container (if present)
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        state: absent
+    - name: Copy docker-compose.yml to server
+      copy:
+        src: docker-compose.yml
+        dest: /home/ubuntu/app/docker-compose.yml
 
-    - name: Run the new container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ image_name }}:{{ image_tag }}"
-        state: started
-        restart_policy: unless-stopped
-        published_ports:
-          - "{{ container_port }}"
+    - name: Copy init.sql to server
+      copy:
+        src: init.sql
+        dest: /home/ubuntu/app/init.sql
 
-    - name: Verify container is running
-      community.docker.docker_container_info:
-        name: "{{ container_name }}"
-      register: container_info
+    - name: Install Docker Compose plugin
+      apt:
+        name: docker-compose-plugin
+        state: present
+        update_cache: true
 
-    - name: Show container status
-      debug:
-        msg: "{{ container_name }} is running: {{ container_info.container.State.Running }}"
+    - name: Pull latest images
+      command: docker compose pull
+      args:
+        chdir: /home/ubuntu/app
+
+    - name: Stop existing stack (if any)
+      command: docker compose down
+      args:
+        chdir: /home/ubuntu/app
+      ignore_errors: true
+
+    - name: Start stack with docker compose
+      command: docker compose up -d
+      args:
+        chdir: /home/ubuntu/app
